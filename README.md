@@ -21,9 +21,9 @@ $ git clone https://github.com/josemarsilva/embeddedSqlDatabase
 2. Import into Eclipse via **existing projects into workspace** option.
 3. Done.
 
-###4. Project Demo
+###4. Project Demonstration
 Run the following method from this class:
-* class: org.josemarsilva.poc.embeddedSqlDatabase.Main
+* class: org.josemarsilva.poc.embeddedSqlDatabase.Sample
 * method: main()
 * expected resource: a little demonstration of use of *embeddedSqlDatabase*
 
