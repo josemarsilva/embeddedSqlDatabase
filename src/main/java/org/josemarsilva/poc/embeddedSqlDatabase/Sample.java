@@ -1,5 +1,7 @@
 package org.josemarsilva.poc.embeddedSqlDatabase;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.SQLException;
 
 import org.josemarsilva.poc.embeddedSqlDatabase.EmbeddedSqlDatabase;
@@ -21,17 +23,22 @@ public class Sample
 	 * main() contains some samples EmbeddedSqlDatabase
 	 * @param args
 	 * @throws SQLException
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
 	 */
-    public static void main( String[] args ) throws SQLException
+    public static void main( String[] args ) throws SQLException, FileNotFoundException, IOException
     {
     	// Configure log4
         org.apache.log4j.BasicConfigurator.configure();
         
         // Call sample1() - New EmbeddedSqlDatabase, Deploy some create tables and views, Query some data
-        sample1();
+//        sample1();
         
         // Call sample2() - New multiples connections to database (>1), create the same table name with the same name but in different schemas
-        sample2();
+//        sample2();
+        
+        // Call sample3() - Import txt file into table
+        sample3();
                 
     }
 
@@ -155,5 +162,25 @@ public class Sample
 
     }
 
+    public static void sample3() throws SQLException, FileNotFoundException, IOException {
+    	
+        // New Embedded Sql Database instance
+        EmbeddedSqlDatabase embeddedSqlDatabase = new EmbeddedSqlDatabase();
+        
+        // Load a file
+        embeddedSqlDatabase.loadFile("log4j.properties", "schemaCt3.loadtable", EmbeddedSqlDatabase.LOAD_FILE_TYPE_TXT);
+
+        // Create view to parse table
+        embeddedSqlDatabase.execSqlStmt("CREATE VIEW schemaCt3.vwSample AS SELECT num_row, SUBSTRING(str_txt,1,200) AS substr FROM schemaCt3.loadtable WHERE LENGTH(str_txt) > 0 AND INSTR(str_txt,'#') > 0 ");
+
+        // Export table to a file
+        embeddedSqlDatabase.exportQuery("sample3-table-json.txt", "SELECT * FROM schemaCt3.loadtable ORDER BY num_row", EmbeddedSqlDatabase.EXPORT_FILE_TYPE_JSON);
+
+        // Export view to a file
+        embeddedSqlDatabase.exportQuery("sample3-view-json.txt", "SELECT * FROM schemaCt3.vwSample" );
+
+        
+    }
+    
     
 }

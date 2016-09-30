@@ -2,9 +2,19 @@ package org.josemarsilva.poc.embeddedSqlDatabase;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -26,8 +36,14 @@ public class EmbeddedSqlDatabase {
 	Connection connection = null;
 	static Logger logger = Logger.getLogger(EmbeddedSqlDatabase.class.getName());
 	
-	// SqlDatabase constants
+	// LoadFileTypes
+	public static int LOAD_FILE_TYPE_TXT = 0;
+	public static int LOAD_FILE_TYPE_CSV = 1;
 	
+	// ExportTable
+	public static int EXPORT_FILE_TYPE_JSON = 0;
+
+	// SqlDatabase constants
 	//
 	// JDBC_DRIVER Samples:
 	// 1. H2 - org.h2.Driver
@@ -139,7 +155,7 @@ public class EmbeddedSqlDatabase {
         	// Get ResultSet MetaData
             for (int i=1; i<=rsmd.getColumnCount(); i++)
             {
-            	logger.info("row: " + rowNumber + "; colLable:" + rsmd.getColumnLabel(i).toLowerCase() + "; colType:" + rsmd.getColumnType (i));
+//            	logger.info("row: " + rowNumber + "; colLable:" + rsmd.getColumnLabel(i).toLowerCase() + "; colType:" + rsmd.getColumnType (i));
         		switch (rsmd.getColumnType (i)) {
         		case  Types.BIGINT:
                     jsonObjRow.addProperty(rsmd.getColumnLabel(i).toLowerCase(), resultSet.getLong(i));
@@ -208,7 +224,92 @@ public class EmbeddedSqlDatabase {
 		return jsonObjResultSet;
 		
 	}
+
+	/**
+	 * Load a file into database - Polymorphism #1.
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
+	 * @throws SQLException 
+	 */
+	public void loadFile(String file, String table, int loadFileType) throws FileNotFoundException, IOException, SQLException {
+		
+		String loadFileTypeString = null;
+		loadFileTypeString = (loadFileType == LOAD_FILE_TYPE_TXT) ? new String("LOAD_FILE_TYPE_TXT") : Integer.toString(loadFileType );
+		logger.info("loadFile( '"+file+"', '"+table+"', "+loadFileTypeString+" )");
+		
+		String sqlStmt = null;
+		// Create schema when necessary "schema.table"
+		String[] fullQualifiedTableName = table.split("\\.");
+		if (fullQualifiedTableName.length > 0 ) {
+			sqlStmt = new String("CREATE SCHEMA IF NOT EXISTS " + fullQualifiedTableName[0]);
+	        execSqlStmt(sqlStmt);
+		}
+		// Create table
+		sqlStmt = new String("CREATE TABLE "+table+" ( id INTEGER IDENTITY PRIMARY KEY, num_row INTEGER, str_txt VARCHAR(2000) )");
+        execSqlStmt(sqlStmt);
+
+		// Load all rows into table
+        logger.info("FileReader('" + file +"')");
+		try(BufferedReader br = new BufferedReader(new FileReader(file))) {
+			int numRow = 1;
+		    for(String line; (line = br.readLine()) != null; ) {
+				sqlStmt = new String("INSERT INTO "+table+" (num_row, str_txt ) VALUES ("+ numRow++ +", '"+line+"' )");
+				logger.info(sqlStmt);
+		        execSqlStmt(sqlStmt);
+		    }
+		}
+		
+		// Index table
+		sqlStmt = new String("CREATE INDEX IDX_NUMROW ON "+table+"( num_row )");
+        execSqlStmt(sqlStmt);
+
+
+	}
+
 	
+	/**
+	 * Export table - Polymorphism #1.
+	 * @throws SQLException 
+	 * @throws IOException 
+	 */
+	public void exportQuery(String file, String sqlQuery, int exportFileType) throws SQLException, IOException {
+		
+		String exportTableTypeString = null;
+		exportTableTypeString = (exportFileType == EXPORT_FILE_TYPE_JSON) ? new String("EXPORT_TABLE_JSON") : Integer.toString(exportFileType );
+		logger.info("exportQuery( '"+file+"', '"+sqlQuery+"', "+exportTableTypeString+" )");
+
+		// Switch Case ( exportTableType )
+		if (exportFileType == EXPORT_FILE_TYPE_JSON){
+			
+			// New Gson JSON Builder to print JSON Objects
+			Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+			
+			// Query some data        
+			JsonObject jsonObjQuery = new JsonObject();
+			jsonObjQuery = execQuery(sqlQuery);
+			
+			// Open JSON export file
+			File exportFile=new File(file);
+			BufferedWriter writer = new BufferedWriter(new FileWriter(exportFile));
+			writer.write (gson.toJson(jsonObjQuery));
+			
+			// Close file
+			writer.close();
+			
+		}
+		
+	}
+
+	
+	/**
+	 * Export table - Polymorphism #2.
+	 * @throws SQLException 
+	 * @throws IOException 
+	 */
+	public void exportQuery(String file, String sqlQuery ) throws SQLException, IOException {
+		
+		exportQuery(file, sqlQuery, EXPORT_FILE_TYPE_JSON );
+	}
 
 	/**
 	 * Close connection to database.
