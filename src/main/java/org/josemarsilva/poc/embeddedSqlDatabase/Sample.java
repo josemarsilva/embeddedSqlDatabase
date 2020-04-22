@@ -14,7 +14,7 @@ import com.google.gson.JsonObject;
 /**
  * Title:        EmbeddedSqlDatabase - Main Demo
  * Description:  EmbeddedSqlDatabase Main Demonstration
- * Author:       Josemar Silva josemarsilva@inmetrics.com.br
+ * Author:       Josemar Silva
  */
 public class Sample 
 {

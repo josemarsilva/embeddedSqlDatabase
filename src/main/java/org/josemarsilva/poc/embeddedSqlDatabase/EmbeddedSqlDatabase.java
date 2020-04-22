@@ -27,7 +27,7 @@ import java.sql.Types;
 /**
  * Title:        EmbeddedSqlDatabase
  * Description:  An Embedded Sql Database abstraction to draft
- * Author:       Josemar Silva josemarsilva@inmetrics.com.br
+ * Author:       Josemar Silva
  */
 public class EmbeddedSqlDatabase {
 	
