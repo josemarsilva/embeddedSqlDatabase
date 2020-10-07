@@ -1,3 +1,9 @@
+# Custom - Java Eclipse Project
+.classpath
+.project
+log4j.properties
+.settings/
 /target/
+
 /sample3-table-json.txt
 /sample3-view-json.txt
